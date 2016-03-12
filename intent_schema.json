@@ -1,0 +1,47 @@
+{
+  "intents": [
+    {
+      "intent": "WhensNextTrainIntent",
+      "slots": [
+        {
+          "name": "Direction",
+          "type": "DIRECTIONS"
+        }
+      ]
+    },
+    {
+      "intent": "SetFavoriteStationIntent",
+      "slots": [
+        {
+          "name": "StationLine",
+          "type": "STATIONLINES"
+        },
+        {
+          "name": "StationName",
+          "type": "STATIONNAMES"
+        }
+      ]
+    },
+    {
+      "intent": "SetStationLineIntent",
+      "slots": [
+        {
+          "name": "StationLine",
+          "type": "STATIONLINES"
+        }
+      ]
+    },
+    {
+      "intent": "SetStationNameIntent",
+      "slots": [
+        {
+          "name": "StationName",
+          "type": "STATIONNAMES"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    }
+  ]
+}

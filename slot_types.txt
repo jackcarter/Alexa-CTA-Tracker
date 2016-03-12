@@ -1,0 +1,126 @@
+DIRECTIONS
+northbound
+southbound
+
+STATIONLINES
+Blue
+Brown
+Green
+Orange
+Pink
+Purple
+Red
+Yellow
+
+STATIONNAMES
+eighteenth
+thirty fifth and archer
+thirty fifth bronzeville iit
+forty third
+forty seventh
+fifty first
+fifty fourth and cermak
+sixty third
+sixty ninth
+seventy ninth
+eighty seventh
+ninety fifth and dan ryan
+adams and wabash
+addison
+argyle
+armitage
+ashland
+ashland and 63rd
+austin
+belmont
+berwyn
+bryn mawr
+california
+central
+central park
+cermak chinatown
+cermak mccormick place
+chicago
+cicero
+clark and division
+clark and lake
+clinton
+conservatory
+cottage grove
+cumberland
+damen
+davis
+dempster
+dempster skokie
+diversey
+division
+forest park
+foster
+francisco
+fullerton
+garfield
+grand
+granville
+halsted
+harlem
+harlem and lake
+harold washington library state and van buren
+harold washington library
+state and van buren
+harrison
+howard
+illinois medical district
+indiana
+irving park
+jackson
+jarvis
+jefferson park
+kedzie
+kedzie homan
+kimball
+king drive
+kostner
+lake
+laramie
+lasalle
+lasalle and van buren
+lawrence
+linden
+logan square
+loyola
+madison and wabash
+main
+merchandise mart
+midway
+monroe
+montrose
+morgan
+morse
+north and clybourn
+noyes
+oak park
+oakton skokie
+o'hare
+paulina
+polk
+pulaski
+quincy and wells
+racine
+randolph and wabash
+ridgeland
+rockwell
+roosevelt
+rosemont
+sedgwick
+sheridan
+south boulevard
+southport
+sox 35th
+state and lake
+thorndale
+uic halsted
+washington
+washington and wells
+wellington
+western
+wilson
