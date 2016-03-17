@@ -60,7 +60,7 @@ def on_launch(launch_request, session):
     print("on_launch requestId=" + launch_request['requestId'] +
           ", sessionId=" + session['sessionId'])
     # Dispatch to your skill's launch
-    return get_welcome_response()
+    return get_welcome_response(session)
 
 
 def on_intent(intent_request, session):
@@ -78,7 +78,9 @@ def on_intent(intent_request, session):
     elif intent_name == "SetFavoriteStationIntent":
         return set_favorite_station(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
+        return get_help_response(session)
+    elif intent_name == "AMAZON.StopIntent" or intent_name == "AMAZON.CancelIntent":
+        return get_stop_response(session)
     else:
         raise ValueError("Invalid intent")
 
@@ -93,12 +95,28 @@ def on_session_ended(session_ended_request, session):
 
 # --------------- Functions that control the skill's behavior ------------------
 
+def get_stop_response(session):
+    session_attributes = {}
+    card_title = "Goodbye"
+    speech_output = "Goodbye"
+    should_end_session = True
+    reprompt_text = None
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
 
-def get_welcome_response():
-    """ If we wanted to initialize the session to have some attributes we could
-    add those here
-    """
-
+def get_help_response(session):
+    session_attributes = {}
+    card_title = "Help"
+    speech_output = "Welcome to the CTA tracker. " \
+        "After you tell me which train station you use, I can tell " \
+        "you when trains are arriving. Just tell me the line and the station, " \
+        "like this: blue line, belmont station. What's your line and station?"
+    reprompt_text = "Try saying this: \"Blue line, Belmont station.\""
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+        
+def get_welcome_response(session):
     session_attributes = {}
     card_title = "Welcome"
     
@@ -115,7 +133,7 @@ def get_welcome_response():
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Please ask for the next northbound train time by saying, " \
-                    "when is the next northboud train"
+                    "when is the next northbound train"
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -160,47 +178,55 @@ def get_line_abbr(user_line_name):
 def set_favorite_station(intent, session):
     session_attributes = {}
     reprompt_text = None
+    card_title = "Set Home Station"
     
+    station_line = None
+    station_name = None
     
-    station_line = intent['slots']['StationLine']['value']
-    station_name = intent['slots']['StationName']['value']
+    if 'value' in intent['slots']['StationLine'] and 'value' in intent['slots']['StationName']:
+        station_line = intent['slots']['StationLine']['value']
+        station_name = intent['slots']['StationName']['value']
     
-    #first, get all stations on the line
-    
-    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-    table = dynamodb.Table('el_stations')
-    line_abbr = get_line_abbr(station_line)
-    fe = Key(line_abbr).eq('TRUE')
-    pe = "MAP_ID, STATION_NAME"
-    response = table.scan(
-        FilterExpression=fe,
-        ProjectionExpression=pe
-    )
-    
-    #then check which station names match what the user said:
-    matches = []
-    for row in response['Items']:
-        if match_station_name(station_name, row['STATION_NAME']):
-            matches.append((row['MAP_ID'], row['STATION_NAME']))
-    matches = deduplicate(matches)
-    speech_output = json.dumps(matches)
-    if len(matches) == 1:
-        user_station_table = dynamodb.Table('favorite_station')
-        response = user_station_table.put_item(
-            Item={
-                'user_id': session['user']['userId'],
-                'station_id': matches[0][0],
-                'station_name': matches[0][1]
-            }
-        )
-        speech_output = "Saved your home station as " + matches[0][1] \
-                        + ". To get arrival times, you can ask, " \
-                        + "when is the next northbound train coming?"
+    if not station_line or not station_name:
+        speech_output = "I didn't quite catch that. What's your station and line?"
     else:
-        speech_output = "please try again " + str(len(matches))
+        #first, get all stations on the line
+        
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        table = dynamodb.Table('el_stations')
+        line_abbr = get_line_abbr(station_line)
+        fe = Key(line_abbr).eq('TRUE')
+        pe = "MAP_ID, STATION_NAME"
+        response = table.scan(
+            FilterExpression=fe,
+            ProjectionExpression=pe
+        )
+        
+        #then check which station names match what the user said:
+        matches = []
+        for row in response['Items']:
+            if match_station_name(station_name, row['STATION_NAME']):
+                matches.append((row['MAP_ID'], row['STATION_NAME']))
+        matches = deduplicate(matches)
+        speech_output = json.dumps(matches)
+        if len(matches) == 1:
+            user_station_table = dynamodb.Table('favorite_station')
+            response = user_station_table.put_item(
+                Item={
+                    'user_id': session['user']['userId'],
+                    'station_id': matches[0][0],
+                    'station_name': matches[0][1]
+                }
+            )
+            speech_output = "Saved your home station as " + matches[0][1] \
+                            + ", " + station_line + " line. " \
+                            + "To get arrival times, you can ask, " \
+                            + "when is the next northbound train coming?"
+        else:
+            speech_output = "Please try again."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, reprompt_text, should_end_session))
 
 def set_direction(userId, direction):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -268,7 +294,7 @@ def get_next_train_helper(station_id, station_name, direction):
         speech_output = get_direction_text(direction) + " trains arriving at " \
                         + station_name + " in " \
                         + get_minutes_text(times[0]) \
-                        + "and " + get_minutes_text(times[1])
+                        + " and " + get_minutes_text(times[1])
     else:
         speech_output = get_direction_text(direction) + " trains arriving at " \
                         + station_name + " in " \
@@ -280,6 +306,7 @@ def get_next_train_helper(station_id, station_name, direction):
 def get_next_train(intent, session):
     session_attributes = {}
     reprompt_text = None
+    card_title = "Arrival Times"
 
     station = None
     direction = None
@@ -311,7 +338,7 @@ def get_next_train(intent, session):
     # the user. If the user does not respond or says something that is not
     # understood, the session will end.
     return build_response(session_attributes, build_speechlet_response(
-        intent['name'], speech_output, reprompt_text, should_end_session))
+        card_title, speech_output, reprompt_text, should_end_session))
 
 def format_time_to_train(interval):
     return str(int(str(interval).split(':')[1]))
@@ -327,8 +354,8 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         },
         'card': {
             'type': 'Simple',
-            'title': 'SessionSpeechlet - ' + title,
-            'content': 'SessionSpeechlet - ' + output
+            'title': title,
+            'content': output
         },
         'reprompt': {
             'outputSpeech': {
