@@ -154,8 +154,12 @@ def get_favorite_station(session):
     return station_id, station_name
 
 def match_station_name(user_station_name, actual_station_name):
-    # TODO: make this more robust, obviously
-    return user_station_name.upper() in actual_station_name.upper()
+    if user_station_name.upper() in actual_station_name.upper():
+        return True
+    elif user_station_name.upper() in actual_station_name.replace("/"," and ").replace("-"," ").upper():
+        return True
+    else:
+        return False
 
 def deduplicate(inp):
   out = []
@@ -169,11 +173,11 @@ def get_line_abbr(user_line_name):
         'brown': 'BRN',
         'green': 'G',
         'orange': 'O',
-        'pink': 'P',
-        'purple': 'Pnk',
+        'pink': 'Pnk',
+        'purple': 'P',
         'red': 'RED',
         'yellow': 'Y'}
-    return colors[user_line_name]
+    return colors[user_line_name.lower()]
     
 def set_favorite_station(intent, session):
     session_attributes = {}
